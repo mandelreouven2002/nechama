@@ -1,0 +1,70 @@
+{% extends "recruit/base.html" %}
+{% block title %}{{ mentor.name }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'dashboard' %}">→ חזרה לכל השיחות</a></p>
+<div class="layout">
+  <section>
+    <h1>{{ mentor.name }} <span class="muted" dir="ltr" style="font-size:15px">{{ mentor.phone }}</span></h1>
+    <div class="chat" id="chat">
+      {% for m in chat %}
+        <div class="bubble {{ m.direction }} {{ m.author }}{% if m.delivery_status == 'failed' or m.delivery_status == 'undelivered' %} failed{% endif %}"><div class="text">{{ m.body }}</div><div class="meta">{% if m.author == 'staff' %}{{ m.staff_user|default:"צוות" }} · {% elif m.author == 'template' %}תבנית פנייה · {% elif m.author == 'nechama' %}נחמה · {% endif %}{{ m.created_at|date:"d.m H:i" }}{% if m.direction == 'out' and m.delivery_status %} · {{ m.delivery_label }}{% endif %}{% if m.error %} · <span style="color:var(--warn)">{{ m.error }}</span>{% endif %}</div></div>
+      {% empty %}
+        <p class="muted">עוד אין הודעות בשיחה הזו.</p>
+      {% endfor %}
+    </div>
+    <form class="reply" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="reply">
+      <textarea name="text" rows="2" placeholder="{% if mentor.in_session_window %}כתיבת תשובה ידנית (תישלח מהמספר של נחמה){% else %}עברו 24 שעות מההודעה האחרונה של המנחה — אי אפשר לשלוח הודעה חופשית{% endif %}" {% if not mentor.in_session_window %}disabled{% endif %}></textarea>
+      <button type="submit" {% if not mentor.in_session_window %}disabled{% endif %}>שליחה</button>
+    </form>
+  </section>
+
+  <aside class="side">
+    <div class="card flags">
+      <h2>מצב</h2>
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="action" value="status">
+        <select name="status" onchange="this.form.submit()">
+          {% for value, label in statuses %}<option value="{{ value }}" {% if mentor.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+      </form>
+      <div style="margin:10px 0 0; display:flex; gap:6px; flex-wrap:wrap">
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle"><input type="hidden" name="field" value="needs_human">
+          <button class="small {% if not mentor.needs_human %}ghost{% endif %}" type="submit">{% if mentor.needs_human %}✓ טופל{% else %}סמן למענה אנושי{% endif %}</button></form>
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle"><input type="hidden" name="field" value="bot_paused">
+          <button class="small {% if not mentor.bot_paused %}ghost{% endif %}" type="submit">{% if mentor.bot_paused %}החזר את נחמה{% else %}השתק את נחמה{% endif %}</button></form>
+        <form method="post">{% csrf_token %}<input type="hidden" name="action" value="toggle"><input type="hidden" name="field" value="opted_out">
+          <button class="small ghost" type="submit">{% if mentor.opted_out %}בטל הסרה{% else %}סמן כהוסר{% endif %}</button></form>
+      </div>
+    </div>
+    <div class="card">
+      <h2>פרטים</h2>
+      <dl>
+        <dt>פניות</dt><dd>{{ mentor.outreach_count }}</dd>
+        <dt>פנייה אחרונה</dt><dd>{{ mentor.last_outreach_at|date:"d.m H:i"|default:"—" }}</dd>
+        <dt>חלון 24 שעות</dt><dd>{% if mentor.in_session_window %}<span class="pill ok">פתוח</span>{% else %}<span class="pill muted">סגור</span>{% endif %}</dd>
+        <dt>מקור</dt><dd>{{ mentor.get_source_display }}</dd>
+        <dt>משחקים</dt><dd>{% for g in games %}{{ g.code }} {{ g.name }} ({{ g.get_status_display }}){% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}</dd>
+      </dl>
+    </div>
+    <div class="card">
+      <h2>מה נחמה יודעת</h2>
+      <p class="muted" style="margin:0 0 6px">העדפות</p>
+      <p style="margin-top:0">{{ mentor.preferences|default:"—" }}</p>
+      <p class="muted" style="margin:0 0 6px">סיכום</p>
+      <p style="margin:0">{{ mentor.summary|default:"—" }}</p>
+    </div>
+    <div class="card">
+      <h2>הערות צוות</h2>
+      <form method="post">{% csrf_token %}
+        <input type="hidden" name="action" value="notes">
+        <textarea name="staff_notes" rows="4">{{ mentor.staff_notes }}</textarea>
+        <p style="margin:8px 0 0"><button class="small" type="submit">שמירה</button>
+        <a class="small" href="{% url 'admin:recruit_mentor_change' mentor.pk %}">עריכה מלאה</a></p>
+      </form>
+    </div>
+  </aside>
+</div>
+<script>const c=document.getElementById('chat'); if(c){c.scrollTop=c.scrollHeight;}</script>
+{% endblock %}

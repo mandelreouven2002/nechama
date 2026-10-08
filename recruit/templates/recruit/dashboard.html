@@ -1,0 +1,64 @@
+{% extends "recruit/base.html" %}
+{% load humanize %}
+{% block title %}שיחות{% endblock %}
+{% block content %}
+{% if not twilio_ready or not ai_ready %}
+  <div class="alert">
+    המערכת עדיין לא מחוברת במלואה:
+    {% if not twilio_ready %} חסרים פרטי Twilio (TWILIO_*).{% endif %}
+    {% if not ai_ready %} חסר מפתח OpenAI (OPENAI_API_KEY).{% endif %}
+    עד שיוגדרו ב-Railway, נחמה לא תוכל לשלוח או לענות.
+  </div>
+{% endif %}
+
+<div class="toolbar">
+  <h1 style="margin:0">שיחות</h1>
+  <span class="pill {% if config.bot_enabled %}ok{% else %}muted{% endif %}">נחמה עונה: {{ config.bot_enabled|yesno:"כן,לא" }}</span>
+  <span class="pill {% if config.outreach_enabled %}ok{% else %}muted{% endif %}">פנייה יזומה: {{ config.outreach_enabled|yesno:"פעילה,כבויה" }}</span>
+  <span class="pill muted">משחקים פנויים: {{ free_games }}</span>
+</div>
+
+<div class="tiles">
+  <a class="tile {% if not status and not flag %}active{% endif %}" href="?"><div class="n">{{ total }}</div><div class="l">כל המנחים</div></a>
+  <a class="tile warn {% if flag == 'human' %}active{% endif %}" href="?flag=human"><div class="n">{{ needs_human }}</div><div class="l">מחכים למענה אנושי</div></a>
+  {% for t in status_tiles %}
+    <a class="tile {% if status == t.value %}active{% endif %}" href="?status={{ t.value }}"><div class="n">{{ t.count }}</div><div class="l">{{ t.label }}</div></a>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <form class="toolbar" method="get">
+    {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+    {% if flag %}<input type="hidden" name="flag" value="{{ flag }}">{% endif %}
+    <input type="search" name="q" value="{{ q }}" placeholder="חיפוש לפי שם או טלפון">
+    <button type="submit" class="small">חיפוש</button>
+    <span class="spacer" style="flex:1"></span>
+    <a class="btn ghost small" href="?flag=paused">מושתקת</a>
+    <a class="btn ghost small" href="?flag=optout">ביקשו הסרה</a>
+    <a class="btn ghost small" href="{% url 'export_csv' 'mentors' %}">ייצוא מנחים</a>
+    <a class="btn ghost small" href="{% url 'export_csv' 'messages' %}">ייצוא הודעות</a>
+  </form>
+  <table>
+    <thead><tr><th>מנחה</th><th>סטטוס</th><th class="hide-sm">הודעה אחרונה</th><th>מתי</th><th class="hide-sm">פניות</th></tr></thead>
+    <tbody>
+    {% for m in mentors %}
+      <tr class="row-link" onclick="location.href='{% url 'mentor_detail' m.pk %}'">
+        <td>
+          <a href="{% url 'mentor_detail' m.pk %}"><strong>{{ m.name }}</strong></a>
+          <div class="muted" dir="ltr" style="text-align:right">{{ m.phone }}</div>
+          {% if m.needs_human %}<span class="pill warn">מענה אנושי</span>{% endif %}
+          {% if m.bot_paused %}<span class="pill muted">נחמה מושתקת</span>{% endif %}
+          {% if m.opted_out %}<span class="pill muted">הוסר</span>{% endif %}
+        </td>
+        <td><span class="pill">{{ m.get_status_display }}</span></td>
+        <td class="hide-sm"><div class="snippet">{% if m.last_author == 'mentor' %}← {% endif %}{{ m.last_body|default:"—" }}</div></td>
+        <td class="muted">{% if m.last_at %}{{ m.last_at|naturaltime }}{% else %}—{% endif %}</td>
+        <td class="hide-sm">{{ m.outreach_count }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5" class="muted">אין מנחים להצגה. אפשר להתחיל ב<a href="{% url 'import_mentors' %}">ייבוא מנחים</a>.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

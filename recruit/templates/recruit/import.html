@@ -1,0 +1,15 @@
+{% extends "recruit/base.html" %}
+{% block title %}ייבוא מנחים{% endblock %}
+{% block content %}
+<h1>ייבוא מנחים</h1>
+<div class="card">
+  <p>מדביקים שורה לכל מנחה: שם וטלפון, מופרדים בפסיק או בטאב (אפשר להעתיק ישר משתי עמודות באקסל או ב-Sheets). אפשר גם להעלות קובץ CSV.</p>
+  <p class="muted">מספרים בפורמט 050-1234567 יומרו אוטומטית ל-‎+972. מנחה שכבר קיים לפי טלפון לא ייווצר פעמיים. ייבוא לא שולח הודעות. פנייה יזומה נשלחת רק כשהמתג בהגדרות דולק.</p>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <textarea name="rows" rows="12" placeholder="ראובן כהן, 050-1234567&#10;דנה לוי	054-7654321"></textarea>
+    <p><input type="file" name="file" accept=".csv,text/csv"></p>
+    <button type="submit">ייבוא</button>
+  </form>
+</div>
+{% endblock %}
