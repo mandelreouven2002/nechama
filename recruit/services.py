@@ -237,7 +237,13 @@ def update_delivery_status(params):
         return 0
     fields = {"delivery_status": status[:20]}
     if params.get("ErrorCode"):
-        fields["error"] = f"{params.get('ErrorCode')} {params.get('ErrorMessage', '')}"[:255]
+        fields["error"] = f"{params.get('ErrorCode')} {params.get('ErrorMessage') or ''}".strip()[:255]
+    if status in ("failed", "undelivered") or params.get("ErrorCode"):
+        log.warning(
+            "Delivery %s for %s to %s: ErrorCode=%s %s",
+            status, sid, params.get("To", ""), params.get("ErrorCode", ""),
+            params.get("ErrorMessage") or "",
+        )
     return Message.objects.filter(twilio_sid=sid).update(**fields)
 
 
