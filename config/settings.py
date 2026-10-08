@@ -31,7 +31,14 @@ PUBLIC_URL = os.environ.get("PUBLIC_URL", "").rstrip("/")
 if not PUBLIC_URL and os.environ.get("RAILWAY_PUBLIC_DOMAIN"):
     PUBLIC_URL = "https://" + os.environ["RAILWAY_PUBLIC_DOMAIN"]
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]", ".up.railway.app", ".railway.internal"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+    ".up.railway.app",
+    ".railway.internal",
+    "healthcheck.railway.app",
+]
 CSRF_TRUSTED_ORIGINS = ["https://*.up.railway.app"]
 if PUBLIC_URL:
     host = urlparse(PUBLIC_URL).hostname
