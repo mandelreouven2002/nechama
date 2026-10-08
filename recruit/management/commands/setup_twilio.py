@@ -47,6 +47,12 @@ class Command(BaseCommand):
         if not sender:
             self.log(f"sender whatsapp:{target} not found")
             return
+        props = sender.get("properties") or {}
+        self.log(
+            f"sender detail: status={sender.get('status')} "
+            f"offline_reasons={sender.get('offline_reasons')} "
+            f"quality={props.get('quality_rating')} limit={props.get('messaging_limit')}"
+        )
         current = sender.get("webhook") or {}
         if current.get("callback_url") == inbound and current.get("status_callback_url") == status:
             self.log("sender webhook already set")
